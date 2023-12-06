@@ -1,14 +1,8 @@
-declare -A osInfo;
-osInfo[/etc/redhat-release]=yum
-osInfo[/etc/arch-release]=pacman
-osInfo[/etc/gentoo-release]=emerge
-osInfo[/etc/SuSE-release]=zypp
-osInfo[/etc/debian_version]=apt-get
-osInfo[/etc/alpine-release]=apk
-
-for f in ${!osInfo[@]}
-do
-    if [[ -f $f ]];then
-        echo ${osInfo[$f]}
-    fi
-done
+packagesNeeded='curl jq'
+if [ -x "$(command -v apk)" ];       then sudo apk add --no-cache $packagesNeeded
+elif [ -x "$(command -v apt-get)" ]; then sudo apt-get install $packagesNeeded
+elif [ -x "$(command -v dnf)" ];     then sudo dnf install $packagesNeeded
+elif [ -x "$(command -v pacman)" ];     then sudo pacman -S $packagesNeeded
+elif [ -x "$(command -v emerge)" ];     then emerge -avjp $packagesNeeded
+elif [ -x "$(command -v zypper)" ];  then sudo zypper install $packagesNeeded
+else echo "FAILED TO INSTALL PACKAGE: Package manager not found. You must manually install: $packagesNeeded">&2; fi
