@@ -60,6 +60,8 @@ ver_check Sed            sed      4.1.5
 ver_check Tar            tar      1.22
 ver_check Texinfo        texi2any 5.0
 ver_check Xz             xz       5.0.0
+ver_check git            git      2.25.0
+ver_check parted         parted   3.2
 # ver_kernel 4.14
 
 
