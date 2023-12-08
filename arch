@@ -1,0 +1,8 @@
+#!/bin/bash
+case $(uname -m) in
+  x86_64)
+    sh x86_64.sh; exit 0
+  ;;
+esac
+
+echo socdasno
