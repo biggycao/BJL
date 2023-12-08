@@ -65,4 +65,4 @@ ver_check parted         parted   3.2
 # ver_kernel 4.14
 
 
-sh pm.sh
+bash pm.sh
