@@ -1,0 +1,20 @@
+#!/bin/bash
+case $(uname -m) in
+  x86_64)
+    sh x86_64.sh; exit 0
+  ;;
+esac
+
+case $(uname -m) in
+  aarch64)
+    sh arm64.sh;exit 0
+  ;;
+esac
+
+case $(uname -m) in
+  i686)
+    sh x86.sh; exit 0
+  ;;
+esac
+
+echo "WE CANT RECOGNISE YOUR SYSTEM ARCH. "; exit 1
