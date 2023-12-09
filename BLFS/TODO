@@ -1,0 +1,40 @@
+#####
+#
+# Project TODO list
+#
+#####
+
+
+--   Review generated scripts for bugs trying to figure out if are due fails
+     in the BLFS book XML tagging (that will implied that the book need be
+     fixed) or are required variations due book layout. If the latter, try
+     to fix it via XSL, documenting in README.BLFS that issues that can't be
+     fixed.
+
+     This is an on-going and never-end task due that, ideally, each commit to
+     the BLFS book should be revised and validated, but our time is limited.
+
+--   Bugs hunting.
+
+--   About dependencies
+     A. A DEPENDENCY MAY NOT BE INSTALLED EVEN IF NEEDED
+     Currently (December 10th, 2021), the dependencies are only installed
+     if either:
+     - (i)  they are not already installed
+     - (ii) their version is higher than the installed version
+     If a dependency is not installed, its dependencies are not considered.
+     But it may happen that a dependency (depB) of a dependency (depA) is in
+     case (i) or (ii) (most likely), but not depA. In this case, depB is
+     not considered, although it might happen that it is needed for the
+     requested package.
+     So the dependency system should be changed to always compute the full
+     dependency chain, and another function should be created to remove
+     packages not in case (i) or (ii) from the list of generated dependencies.
+     B. CHECKING DEPENDENCIES
+     There are several kinds of checks we might want to implement, for
+     example:
+     - (i)   check that a package can be built with only the listed
+             dependencies, and their dependencies (missing dependency)
+     - (ii)  check that the dependencies do not include dependencies
+             that are already in the dependency chain (redundant dependency)
+     - (iii) check that a dependency is really needed (false dependency)

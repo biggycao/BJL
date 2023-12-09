@@ -1,0 +1,102 @@
+#!/bin/bash
+
+set -e
+
+
+no_empty_builddir() {
+  'clear'
+cat <<- -EOF-
+${DD_BORDER}
+
+${tab_}${tab_}${BOLD}${RED}W A R N I N G${OFF}
+    Looks like the \$BUILDDIR directory contains subdirectories
+    from a previous build.
+
+    Please format the partition mounted on \$BUILDDIR or set
+    a different build directory before running jhalfs.
+${OFF}
+${DD_BORDER}
+-EOF-
+  exit
+}
+
+
+#----------------------------#
+run_make() {                 #
+#----------------------------#
+  # Test if make must be run.
+  if [ "$RUNMAKE" = "y" ] ; then
+    # Test to make sure we're not running the build as root
+    if [ "$UID" = "0" ] ; then
+      echo "You must not be logged in as root to build the system."
+      exit 1
+    fi
+    # Build the system
+    if [ -e "$MKFILE" ] ; then
+      echo -ne "Building the system...\n"
+#      if { echo try tty; tty; }; then
+      cd "$JHALFSDIR" && make -j1
+      echo -ne "done\n"
+#      else echo there is no terminal!!; fi
+    fi
+  fi
+}
+
+
+#----------------------------#
+clean_builddir() {           #
+#----------------------------#
+# Test if the clean must be done.
+if [ "${CLEAN}" = "y" ]; then
+  # If empty (i.e. could contain lost+found), do not do anything
+  if ls -d $BUILDDIR/* > /dev/null 2>&1 &&
+       [ "$(ls $BUILDDIR)" != "lost+found" ]; then
+    # Test to make sure that the build directory was populated by jhalfs
+    if [ ! -d $JHALFSDIR ] || [ ! -d $BUILDDIR/sources ] ; then
+      echo "Looks like $BUILDDIR was not populated by a previous jhalfs run."
+      exit 1
+    # Test that dev filesystems are not mounted in $BUILDDIR
+    elif mount | grep $BUILDDIR/dev > /dev/null ; then
+      echo "Looks like kernel filesystems are still mounted on $BUILDDIR."
+      exit 1
+    else
+      if [ $JHALFSDIR/*gcc-pass1 != $JHALFSDIR/'*gcc-pass1' ]; then
+        echo -n "$BUILDDIR contains already built packages. Clean anyway? yes/no (yes): "
+        read ANSWER
+        if [ x${ANSWER:0:1} = "xn" -o x${ANSWER:0:1} = "xN" ] ; then
+          echo "${nl_}Rerun and change the option in the menu.${nl_}"
+          exit 1
+        fi
+      fi
+      # Clean the build directory
+      echo -n "Cleaning $BUILDDIR ..."
+      # First delete proc and sys directories, if they exist.
+      # Both should be empty. If not, we exit, and the rmdir command
+      # has generated an error message
+      if [ -d $BUILDDIR/proc ] ; then
+        sudo rmdir $BUILDDIR/proc || exit 1
+      fi
+      if [ -d $BUILDDIR/sys ] ; then
+        sudo rmdir $BUILDDIR/sys || exit 1
+      fi
+      sudo rm -rf $BUILDDIR/{bin,boot,dev,etc,home,lib{,64,32,x32},media,mnt,run}
+      sudo rm -rf $BUILDDIR/{opt,root,sbin,srv,tmp,tools,cross-tools,usr,var}
+      echo "done"
+      if [[ "${BLFS_TOOL}" = "y" ]] ; then
+        echo -n "Cleaning $BUILDDIR/$BLFS_ROOT ..."
+        sudo rm -rf $BUILDDIR/$BLFS_ROOT
+        echo "done"
+      fi
+      echo -n "Cleaning $JHALFSDIR ..."
+      sudo rm -rf $JHALFSDIR
+      echo "done"
+      echo -n "Cleaning remaining extracted sources in $BUILDDIR/sources ..."
+      sudo rm -rf `find $BUILDDIR/sources -maxdepth 1 -mindepth 1 -type d`
+      echo "done"
+      echo -n "Removing dangling symlinks in / ..."
+      sudo rm -f /tools /cross-tools
+      echo "done"
+    fi
+  fi
+fi
+}

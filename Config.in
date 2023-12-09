@@ -1,0 +1,980 @@
+# Check for "nproc" presence:
+config HAVE_NPROC
+    def_bool $(shell,if nproc &>/dev/null; then echo y; else echo n; fi)
+
+# Check for "cpuset controller in cgroup v2" presence:
+config HAVE_CGROUP
+    def_bool $(shell,if grep -q cpuset /sys/fs/cgroup/cgroup.controllers 2>/dev/null; then echo y; else echo n; fi)
+
+menu "BOOK Settings"
+
+    #--- BOOK/script
+    choice
+        prompt "Use BOOK"
+        default BOOK_LFS
+        help
+            Select the book where build instructions are retrieved.
+
+        config    BOOK_LFS
+            bool "Linux From Scratch System V"
+            help
+                Set up the tools to build LFS with SysV init.
+
+        config    BOOK_LFS_SYSD
+            bool "Linux From Scratch systemd"
+            help
+                Set up the tools to build LFS with systemd init.
+
+        config    BOOK_BLFS
+            bool "Beyond Linux From Scratch (see help)"
+            help
+                if the LFS system has already been built, install the tools
+                to build BLFS packages.
+    endchoice
+
+    choice
+    depends on BOOK_BLFS
+    prompt "Init system"
+
+        config BLFS_SYSV
+        bool "BLFS SysV"
+        help
+            Extract the SysV flavour of the BLFS book
+
+        config BLFS_SYSD
+        bool "BLFS systemd"
+        help
+            Extract the systemd flavour of the BLFS book
+
+    endchoice
+
+    config    INITSYS
+        string
+        default "sysv"         if BOOK_LFS || BLFS_SYSV
+        default "systemd"      if BOOK_LFS_SYSD || BLFS_SYSD
+
+    config    RUN_ME
+        string
+        default "./jhalfs run" if BOOK_LFS || BOOK_LFS_SYSD
+        default "./install-blfs-tools.sh auto" if BOOK_BLFS
+    #--- End BOOK/script
+
+    #--- Book version
+    choice
+        prompt   "Book version"
+        default   BRANCH
+
+        config    BRANCH
+            bool    "Branch (default to trunk) or any commit"
+            help
+                Use an LFS book downloaded from the git repository, and
+                checked out at any commit (branch/tag/sha)
+
+        config    WORKING_COPY
+            bool    "Working Copy"
+            help
+                Use a local working copy of the LFS book
+    endchoice
+
+    config    COMMIT
+        string    "Branch, tag, or any commit"
+        default    "trunk"
+        depends on    BRANCH
+        help
+            Enter a branch, a tag, or an abbreviated commit sha.
+            The tool will clone the LFS repository and checkout
+            that commit
+
+    config    BOOK
+        string    "Loc of working copy (mandatory)"
+        default    "**EDIT ME**"
+        depends on    WORKING_COPY
+        help
+            The full path to a local copy of the LFS book XML sources
+
+    choice
+    depends on (BOOK_LFS || BOOK_LFS_SYSD)
+    prompt "Multilib"
+    default LFS_MULTILIB_NO
+        config LFS_MULTILIB_NO
+        bool "Standard LFS on i686 or amd64"
+        help
+            Use standard LFS book (choose this if not multilib source)
+
+        config LFS_MULTILIB_I686
+        bool "Multilib LFS on amd64 with i686 libraries"
+        help
+            Use Multilib LFS book with i686 libraries
+
+        config LFS_MULTILIB_X32
+        bool "Multilib LFS on amd64 with x32 libraries"
+        help
+            Use Multilib LFS book with x32 libraries
+
+        config LFS_MULTILIB_ALL
+        bool "Multilib LFS on amd64 with i686 and x32 libraries"
+        help
+            Use Multilib LFS book with i686 and x32 libraries
+
+    endchoice
+
+    config    MULTILIB
+        string
+        default "default"      if LFS_MULTILIB_NO
+        default "ml_32"        if LFS_MULTILIB_I686
+        default "ml_x32"       if LFS_MULTILIB_X32
+        default "ml_all"       if LFS_MULTILIB_ALL
+
+    #--- End BOOK version
+
+    choice
+        prompt    "Build method"
+        default   BUILD_CHROOT
+        depends on (BOOK_LFS || BOOK_LFS_SYSD)
+        help
+            What build method should be used: a chroot jail or minimal boot
+            system. Review the clfs-ng branch chap6 "TO BOOT OR CHROOT" for
+            a full explanation.
+
+        config    BUILD_CHROOT
+            bool    "chroot"
+
+        config    BUILD_BOOT
+            bool    "boot"
+    endchoice
+
+    config    METHOD
+        string
+        default "chroot"    if BUILD_CHROOT
+        default "boot"      if BUILD_BOOT
+
+    config    BOOT_CONFIG
+        string  "BOOT kernel config file (mandatory)"
+        default "***EDIT ME***"
+        depends on BUILD_BOOT
+        help
+            If METHOD=boot, location of boot-kernel config file
+            The config file will be copied to ${BUILD_DIR}/sources
+            and renamed 'bootkernel-config'
+            NOTE: this setting is required
+
+    #--- blfs-tool Support
+    config BLFS_TOOL
+        bool    "Add blfs-tool support"
+        default    n
+        depends on !BOOK_BLFS
+        help
+            Activating this option will install additional packages needed
+            to use blfs tools after booting the new system.
+            The blfs-tool files will be installed under $BUILD_DIR/blfs_root
+            (see below).
+            After booting the new xLFS system, but before using the blfs tools,
+            you should create a user account, move the /blfs_root directory
+            to that user's home, and change its ownership to that of the user.
+            Also, be sure to give the user read and write access on the
+            $TRACKING_DIR directory and the files that it contains.
+            Don't forget to configure sudo properly on the new system.
+
+    config DUMMY # Avoid indenting the items below
+    bool
+
+    if BLFS_TOOL
+        menu "blfs-tool dependencies"
+
+            config    DEP_LIBXML
+            bool    "libxml2 (required)"
+            default    y
+
+            config    DEP_LIBXSLT
+            bool    "libxslt (required)"
+            default    y
+
+            config    DEP_DBXML
+            bool    "DocBook XML DTD (required)"
+            default    y
+
+            config    DEP_LYNX
+            bool    "lynx (optional, for reading the generated book)"
+            default    y
+
+            config    DEP_SUDO
+            bool    "sudo (recommended)"
+            default    y
+
+            config    DEP_WGET
+            bool    "wget (recommended)"
+            default    y
+
+            config    DEP_GPM
+            bool    "GPM (optional, see help)"
+            default    n
+            help
+                if you install gpm, it will be started
+                automatically on boot. It allows copy-paste
+                while Xorg is not installed.
+
+            config    DEP_GIT
+            bool    "GIT client (optional, see help)"
+            default    n
+            help
+                Git is needed for updating the book
+                sources. You do not need it if building a
+                stable book.
+
+        endmenu
+
+        choice
+        prompt    "BLFS book version"
+        default    BLFS_BRANCH
+
+            config    BLFS_BRANCH
+            bool    "BLFS Branch (default trunk) or any commit"
+            help
+                Use a BLFS book downloaded from the git repository, and
+                checked out at any commit (branch/tag/sha).
+
+            config    BLFS_WORKING_COPY
+            bool    "BLFS working copy"
+            help
+                Use a local working copy of the BLFS book.
+        endchoice
+
+        config    BLFS_WC_LOCATION
+        string    "Location of the local BLFS working copy (mandatory)"
+        default    "**EDIT ME**"
+        depends on BLFS_WORKING_COPY
+        help
+            Full path to the BLFS book working copy
+
+        config    BLFS_COMMIT
+        string    "BLFS Book commit (branch/tag/sha)"
+        default   "trunk"
+        depends on BLFS_BRANCH
+        help
+             Can be any branch, tag, or abbreviated (or not) commit sha.
+    endif
+    #--- End blfs-tool Support
+
+    #--- BLFS params (Used for installing the tools, either after a jhalfs run
+    #    or directly)
+        config    BLFS_ROOT
+        string "Root of the tools directory (see help)"
+        default "/blfs_root"
+        depends on BLFS_TOOL || BOOK_BLFS
+        help
+            Path to the directory where all required files and scripts
+            will be stored.
+            
+            This path must begin with a slash, and:
+            - is relative to the user's HOME directory when installing the
+              blfs tools on an already existing LFS system.
+            - is relative to the root of the build directory (`/' in chroot)
+              when adding the tools after a jhalfs run
+            
+            CAUTION: this directory will be removed if it already exists.
+
+        config    BLFS_XML
+        string "BLFS sources directory (internal parameter)"
+        default "blfs-xml"
+        depends on BLFS_TOOL || BOOK_BLFS
+        help
+            The directory name under $BLFS_ROOT where the BLFS
+            book sources will be copied or checked out. Do not change that
+            unless you know what you are doing...
+
+        config    LFS_XML
+        string "LFS sources directory (internal parameter)"
+        default "lfs-xml"
+        depends on BLFS_TOOL || BOOK_BLFS
+        help
+            The directory name under $BLFS_ROOT where the LFS
+            book sources will be copied or checked out. Do not change that
+            unless you know what you are doing...
+
+        choice
+        prompt    "LFS book version"
+        default    LFS_BRANCH
+        depends on    BOOK_BLFS
+
+            config    LFS_BRANCH
+            bool     "LFS branch (default trunk) or any commit"
+            help
+                Use an LFS book downloaded from the git repository and
+                checked out at any commit (branch/tag/sha).
+
+            config    LFS_WORKING_COPY
+            bool     "LFS working copy"
+            help
+                Use a local working copy of the LFS book.
+        endchoice
+
+        config    BLFS_LFS_BOOK
+        string    "Location of the local LFS working copy (mandatory)"
+        default    "**EDIT ME**"
+        depends on LFS_WORKING_COPY
+        help
+            Full path to the LFS book working copy"
+
+        config    BLFS_LFS_COMMIT
+        string    "LFS Book Commit (mandatory)"
+        default   "trunk"
+        depends on LFS_BRANCH
+        help
+            Any branch, tag or abbreviated (or not) commit sha.
+    # End of BLFS parameters
+
+    #--- Custom Tools support
+    config CUSTOM_TOOLS
+        depends on !BOOK_BLFS
+        bool    "Add custom tools support"
+        default    n
+        help
+            Activating this option additional packages you create
+            will be installed after finished the xLFS system build.
+    #--- End Custom Tools support
+
+    #--- This directory is needed for blfs tools installation and custom tools
+    #    As well.
+    config    TRACKING_DIR
+        string "Installed packages database directory"
+        default "/var/lib/jhalfs/BLFS"
+        depends on BOOK_BLFS || BLFS_TOOL || CUSTOM_TOOLS
+        help
+            Full path to the directory where the database of
+            installed packages will be created.
+            
+            If the blfs tools are installed on a running xLFS system,
+            the user must have enough privileges to create this directory.
+            It may be necessary to create the /var/lib/jhalfs directory as
+            root, and make it writable by the user before running this tool.
+            
+            If you are installing the blfs tools as part of an xLFS build
+            and/or using the customized scripts feature, you will
+            need to fix this directory's permissions after booting
+            the new system.
+            
+            Note that the user who will build the packages must
+            have read and write access to this directory.
+
+#--- End BOOK Settings
+endmenu
+
+menu "General Settings"
+depends on !BOOK_BLFS
+
+    #--- LFS User Account
+
+    config    LUSER
+        string
+        default    "lfs"
+
+    config    LGROUP
+        string
+        default    LUSER
+
+    config    LHOME
+        string
+        default    "/home"
+
+    #--- End Set User Account
+
+    config BUILDDIR
+        string "Build Directory"
+        default "/mnt/build_dir"
+        help
+            #-- The directory where the created system will be located.
+            #   NOTE: A working directory named jhalfs will be created
+            #   here, so ensure this does not conflict with the jhalfs
+            #   source directory.
+
+    config    GETPKG
+        bool "Retrieve source files"
+        default n
+        help
+            #-- Download all packages and patches required by the selected book
+            #   NOTE: Looks for files in the local archive defined by SRC_ARCHIVE
+            #   first and if necessary retrieves them from the 'net.
+            #   Files will be transferred to $BUILDDIR/sources.
+
+    config SRC_ARCHIVE
+        string "Package Archive Directory"
+        default "$SRC_ARCHIVE"
+        depends on GETPKG
+        help
+            #-- A local archive for packages/files (not $BUILDDIR/sources)
+            #   Any missing file will be downloaded and archived here,
+            #   if the user has the right privileges.
+
+    config RETRYSRCDOWNLOAD
+        bool "Retry on 'connection refused' failure"
+        default n
+        depends on GETPKG
+        help
+            #-- Attempt to download a source package again if it fails
+            #   with a 'connection refused' error. This can happen on
+            #   servers that are overloaded.
+
+    config RETRYDOWNLOADCNT
+        int "Number of retry attempts on download failures"
+        default 20
+        depends on GETPKG
+        help
+            #-- Number of times to retry a failed download.
+
+    config DOWNLOADTIMEOUT
+        int "Download timeout (in seconds)"
+        default 30
+        depends on GETPKG
+        help
+            #-- Number of seconds to wait for a download to start before
+            #   timing out.
+
+    config    RUNMAKE
+        bool    "Run the makefile"
+        default n
+        help
+            #-- Automatically run the makefile once it has been created
+
+    config    CLEAN
+        bool    "Rebuild files"
+        default    n
+        help
+            #-- Clean the build directory before performing any other task.
+            #   The directory is cleaned only if it was populated by a
+            #   previous JHALFS run.
+
+#--- End General Settings
+endmenu
+
+menu "Build Settings"
+depends on !BOOK_BLFS
+
+    #--- Parallelism
+    menu "Parallelism settings"
+    if HAVE_NPROC
+        config ALL_CORES
+        bool "Use all cores"
+        default y
+        help
+              If you answer y, MAKEFLAGS will be set to "-j$(nproc)" at the
+              beginning of each package script, and book instructions will not
+              be changed otherwise. This will run the scripts with the same
+              settings as in the book since version r12.0-87 included. Before
+              that version, this will run the builds with all cores, but some
+              test suites may still be run sequentially. You'll be asked for
+              a CPU set to use, so that the number of jobs can still be limited
+              in this way (useful for measuring SBU values at -j4, for
+              example).
+              If you answer n, then jhalfs will fall back to a static number
+              of cores, defined below.
+
+        if ALL_CORES && HAVE_CGROUP
+            config CPUSET
+            string "set of cpus to use, or 'all' for all cpus"
+            default "all"
+            help
+                 See "List format" in cpuset(7). Choosing cpus depend
+                 on the topology of your processors. Sometimes two
+                 hyperthreads on the same core are numbered consecutively.
+                 For example for using all cores and no hyperthreading on
+                 a Haswell, use "0,2,4,6". Other brands may have a different
+                 topology, and may require e.g. "0-3" to use the first 4 cores.
+                 If not sure, keep the default.
+        endif
+
+    endif # HAVE_NPROC
+    if !HAVE_NPROC
+        config ALL_CORES
+        bool
+        default n
+    endif
+
+    config    N_PARALLEL
+        int "Number of parallel `make' jobs"
+        depends on !ALL_CORES
+        default 1
+        help
+            #-- The usual recommandation is (number of CPU cores)+1
+            #   Do not set for meaningful SBU calculations.
+
+    config    REALSBU
+        bool    "Build Binutils pass1 without parallelism (Real SBU)"
+        default    n
+        help
+           #-- Use -j1 in make invokation for Binutils pass1 to
+           #   get a valid SBU value.
+    endmenu # parallelism
+
+    #--- Test Suites
+    config    CONFIG_TESTS
+        bool    "Run testsuites"
+        default    y
+        help
+            #-- Run test suites
+            #  If you select 'y' here:
+            #  You will have to select between:
+            #  - Only critical final system testsuites
+            #  - All final system testsuites
+            #
+            #  Note that in any case, all the test instructions will
+            #  be generated. Those which are not wanted will be commented
+            #  out. If you select 'n' here, the commented test instructions
+            #  do not stop on test suite failures.
+
+    choice
+        depends on    CONFIG_TESTS
+        prompt    "Tests level"
+        default    TST_1
+
+        config  TST_1
+            bool    "Only final system critical testsuites"
+            help
+                #-- Critical tests:
+                # Only Glibc, Binutils, GMP, MPFR, MPC and GCC
+                # testsuites for final system. The others are commented
+                # out.
+
+        config    TST_2
+            bool    "All final system testsuites"
+            help
+                #-- All final system test suites:
+                # Test instructions for the temporary tools (if available)
+                # are commented out.
+
+    endchoice
+
+    config    TEST
+        int
+        default    "0"    if !CONFIG_TESTS
+        default    "1"    if TST_1
+        default    "2"    if TST_2
+    #--- End Test Suites
+
+    #--- Package Management
+    config  PKGMNGT
+        bool    "Package management"
+        depends on BOOK_LFS || BOOK_LFS_SYSD
+        default n
+        help
+            #-- Use package management
+            #
+            #  If set, you'll have to choose between
+            #  two package management styles:
+            #  - Build and install:
+            #    the packages in the final phase are built
+            #    in a separate directory, PKG_DEST.
+            #    You should provide a bash function for
+            #    packaging and installing the package.
+            #  - Preload a library before install:
+            #    Run the install instructions inside a
+            #    wrapper command, which monitors the
+            #    installed files.
+            #
+            #  Also, you have to provide the instructions
+            #  to build the package manager during the
+            #  temporary tools phase, in the form of a
+            #  sect1 of the book identical to a package
+            #  sect1. See README.PACKAGE_MANAGEMENT
+    choice
+        depends on PKGMNGT
+        prompt "Package management style"
+        default PKG_PACK
+
+        config PKG_PACK
+            bool "Build and pack (pacman or dpkg style)"
+
+        config LIB_LOAD
+            bool "Preload a library before installing (porg style)"
+    endchoice
+
+    config WRAP_INSTALL
+        bool
+        default y if LIB_LOAD
+        default n if PKG_PACK
+    #--- End package management
+
+    #--- Installed files logs
+    config    INSTALL_LOG
+        bool    "Create a log of installed files for each package"
+        default    n
+        help
+            #-- Select this if you want to create logs of the files
+            #   installed by each package on the final system.
+
+    #--- End Installed files logs
+
+    config    STRIP
+        bool "Strip Installed Binaries/Libraries"
+        default n
+
+    config    NO_PROGRESS_BAR
+        bool "DO NOT use/display progress_bar"
+        default n
+        help
+            #-- Do not use the progress bar routine. On slower machines
+            #   this function consumes precious CPU cycles.
+
+#--- End Build Settings
+endmenu
+
+menu "System configuration"
+    depends on !BOOK_BLFS
+
+    #--- FSTAB
+    config    HAVE_FSTAB
+        bool    "Use a custom fstab file"
+        default    n
+        help
+            #-- Select this if you have an fstab file with entries
+            #   for the target system
+
+    config    FSTAB
+        string    "Fstab file (optional)"
+        default    "***EDIT ME***"
+        depends on HAVE_FSTAB
+        help
+            #-- The location of fstab file (if empty, a template is created)
+    #--- End FSTAB
+
+    #--- Kernel
+    config    CONFIG_BUILD_KERNEL
+        bool    "Build the kernel"
+        default    n
+        help
+            #-- Select this option if you wish to build the kernel.
+            #
+            #   You will be prompted for the full path to the .config
+            #   file. It will be copied to the 'sources' directory and
+            #   renamed kernel-config
+
+    config    CONFIG
+        string    "Kernel config file"
+        default    "***EDIT ME***"
+        depends on CONFIG_BUILD_KERNEL
+        help
+            #-- Fully qualified path to a kernel config file
+            #   The config file will be copied to ${BUILD_DIR}/sources
+            #   and renamed 'kernel-config'
+            #
+            #   Important: if the config file is out of date (missing
+            #   option), the kernel build will timeout instead of
+            #   waiting forever for an input. This will generate error
+            #   124. In this case, update your config file,
+            #   copy it to $BUILD_DIR/sources/kernel-config, and
+            #   restart the build.
+    #--- End Kernel
+
+    config    NCURSES5
+        bool "Install non-wide-character ncurses"
+        default n
+        depends on BOOK_LFS || BOOK_LFS_SYSD
+        help
+            #-- Install the optional non wide character ncurses5 library
+
+    config    TIMEZONE
+        string "TimeZone"
+        default "GMT"
+        help
+            #-- The timezone as output by tzselect
+            #   This will be copied to /etc/localtime
+
+    config    LANG
+        string "Language"
+        default "$LANG"
+        help
+            #-- LANG variable set in /etc/profile
+            #   See http://sourceware.org/git/?p=glibc.git;a=blob;f=localedata/SUPPORTED
+            #   for values (or the file localedata/SUPPORTED in glibc tarball)
+
+    config  FULL_LOCALE
+        bool "Install the full set of locales"
+        default n
+        help
+            #-- If set to y, the full set of supported locales
+            #   will be installed. Otherwise, only the minimal set
+            #   necessary for the tests will be installed,
+            #   together with the locale associated with the
+            #   LANG you have chosen, if not in the minimal set.
+
+    #--- Groff page
+    choice
+        prompt    "Groff page size"
+        default    PAGE_LETTER
+        help
+            #-- Page definition for groff: letter or A4
+
+        config    PAGE_LETTER
+            bool    "letter"
+
+        config    PAGE_A4
+            bool    "A4"
+    endchoice
+
+    config    PAGE
+        string
+        default    "letter"    if PAGE_LETTER
+        default    "A4"        if PAGE_A4
+    #--- End Groff page
+
+    config    HOSTNAME
+        string "Hostname (see help)"
+        default "**EDITME**"
+        help
+          If you are on a public network, use the hostname given to you by
+          your institution, or corporation, etc. If your network is private,
+          that is, behind a firewall such as a box to connect to your ISP,
+          you can choose anything you'd like. Combined with the domain name
+          "local", you have the possibility to access your computer by name
+          instead of address on the private network (see RFC 6762 and
+          https://www.howtogeek.com/167190/).
+
+       menu "Network configuration"
+        config INTERFACE
+            string "netword card name"
+            default "eth0"
+            help
+              eth0 is used in most cases. Virtual interfaces may get other
+              names (for example enp0s3 for the default network stack in qemu).
+              Systemd may also rename network interfaces according to their
+              bus addresses.
+        config IP_ADDR
+            string "Static IP address"
+            default "10.0.2.9"
+            help
+              The default here is for a virtual interface in qemu. Private
+              networks have addresses in the range 10.x.x.x or 192.168.x.x.
+              You have to know your network prefix. Then the last figure
+              may be anything you like.
+
+        config GATEWAY
+            string "Gateway"
+            default "10.0.2.2"
+            help
+              Again, this default is for a qemu network stack. Usually, the
+              gateway is the address of your firewall.
+        config PREFIX
+            string "Subnet prefix"
+            default "24"
+            help
+              Again, this default is for a qemu network stack, but is also
+              the most used in private networks.
+        config BROADCAST
+            string "Broadcast address"
+            default "10.0.2.255"
+        config DOMAIN
+            string "Domain name (see help)"
+            default "local"
+            help
+               Domain Name:
+               Doamin names are registered, so if your computer is on a public
+               network, you cannot use any name you'd like. On a public
+               network, you should have been given a domain name by
+               your corporation, institution, etc.
+               If your network is really private, that is behind a firewall
+               such as a box for connecting to an ISP, you can choose any
+               domain you'd like. You can also opt for "local", see RFC 6762,
+               or "something.test", see RFC 6761.
+        config DNS1
+            string "Primary Name server"
+            default "10.0.2.3"
+        config DNS2
+            string "Secondary Name server"
+            default "8.8.8.8"
+    endmenu # Network configuration
+
+    menu "Console configuration"
+        config FONT
+            string "Console font"
+            default "lat0-16"
+            help
+                Unicode mode is set by default. Setting FONT_MAP, FONT_UNIMAP,
+                etc, must be done manually.
+        config KEYMAP
+            string "Keymap name"
+            default "us"
+        config LOCAL
+            boolean "Hardware clock is set to local time"
+            default n
+            help
+                If the harware clock is set to local time, answer yes,
+                If it is set to UTC, answer no
+        config LOG_LEVEL
+            string "Default log level (1-8)"
+            default "4"
+            depends on BOOK_LFS
+            help
+                This can be changed using dmesg. 1 means "no message",
+                8 shows every message sent by the kernel, which is very
+                noisy. The default at boot time is 7, which is quite
+                noisy too.
+    endmenu # Console configuration
+
+endmenu        #--- System configuration
+
+menu "Advanced Features"
+depends on !BOOK_BLFS
+
+    #--- Optimizations
+    config    CONFIG_OPTIMIZE
+        bool    "Optimization"
+        default    n
+        help
+            #   Opens a menu for various optimization settings:
+            #   Actual optimization flags MUST be defined in ./optimize/*
+            #   before activating this option.
+            #
+            # WARNING: The use of build optimizations may lead to build issues.
+            #   If the system doesn't work as expected, please rebuild
+            #   without optimizations before asking for support.
+    menu    "Optimization settings"
+        depends on CONFIG_OPTIMIZE
+
+    choice
+        prompt "Optimization level"
+        default OPT_1
+        help
+            #-- Optimization values are set in optimize/* files
+
+        config    OPT_1
+            bool    "Final system only"
+
+        config    OPT_2
+            bool    "Both temp tools and final system"
+
+    endchoice
+
+    endmenu # Optimization settings
+    config    OPTIMIZE
+        int
+        default    "0"    if !CONFIG_OPTIMIZE
+        default    "1"    if OPT_1
+        default    "2"    if OPT_2
+
+    #--- End Optimizations
+
+    config    REPORT
+        bool "Create SBU and disk usage report"
+        default y
+
+    config    SAVE_CH5
+        bool "Save temporary system work"
+        depends on BOOK_LFS || BOOK_LFS_SYSD
+        default n
+        help
+            Save the state of jhalfs after finishing building the temporary
+            system
+            
+            if you tick this item, the whole $LFS directory is
+            saved when chapter 7 is finished. It'll be in a .tar
+            file in the $BUILD_DIR/jhalfs directory
+
+    #--- ICA
+    config    COMPARE
+        bool "Run comparison analysis on final stage"
+        default n
+        help
+            #-- Should an iterative comparison analysis be performed?
+            #
+            #   Unless you are familiar with ICA, do not
+            #   select this option
+            #
+            #  ICA is an analysis tool for comparing one
+            #  build to the next. Builds mays differ from one iteration
+            #  to another due to the build order and this tool try
+            #  to ferret out those differences by examining the stored
+            #  build logs and binary files.
+            #
+            #  The scripts are well commented and can be found in ./extras/*
+            #
+
+    config    ITERATIONS
+        int    "Number of test runs (2,3,4,5)"    if COMPARE
+        depends on COMPARE
+        range    2 5
+        default    3
+
+    config    RUN_ICA
+        bool
+        default y if COMPARE
+
+    #--- End ICA
+
+    #-- Internal Settings
+    menu "Internal Settings (WARNING: for jhalfs developers only)"
+
+        config    SCRIPT_ROOT
+            string    "Scripts root"
+            default "jhalfs"
+
+        config    JHALFSDIR
+            string "jhalfs directory"
+            default "$BUILDDIR/$SCRIPT_ROOT"
+
+        config    LOGDIRBASE
+            string "Build logs directory basename"
+            default "logs"
+
+        config    LOGDIR
+            string "Build logs directory"
+            default "$JHALFSDIR/$LOGDIRBASE"
+
+        config    TESTLOGDIRBASE
+            string "Test suites logs directory basename"
+            default "test-logs"
+
+        config    TESTLOGDIR
+            string "Test suites logs directory"
+            default "$JHALFSDIR/$TESTLOGDIRBASE"
+
+        config    FILELOGDIRBASE
+            string "Installed files logs directory basename"
+            default "installed-files"
+
+        config    FILELOGDIR
+            string "Installed files logs directory"
+            default "$JHALFSDIR/$FILELOGDIRBASE"
+
+        config    ICALOGDIR
+            string "ICA logs directory"
+            default "$LOGDIR/ICA"
+
+        config    MKFILE
+            string "Makefile"
+            default "$JHALFSDIR/Makefile"
+
+        config    XSL
+            string "XSL stylesheet"
+            default "lfs.xsl"
+
+        config    PKG_LST
+            string "Package contents list"
+            default "unpacked"
+
+        config    DEL_LA_FILES
+            bool "Remove libtool .la files"
+            default y
+            help
+                #-- Remove files libxxx.la installed by libtool. Only set to
+                #   "n" if you know what you are doing. For a rationale
+                #   see https://blog.flameeyes.eu/tags/lafiles/
+
+    #--- End Internal Settings
+    endmenu
+
+#--- End Advanced Features
+endmenu
+
+config REBUILD_MAKEFILE
+#    depends on !BOOK_BLFS
+    bool "Rebuild the Makefile (see help)"
+    default n
+    help
+        #-- Rebuild the Makefile
+        #
+        #   This option allows to rebuild the Makefile after
+        #   customizing the base system build scripts.
+        #
+        #   See README.CUSTOM for more info about this feature.
+        #   Note that you should do that after configuring a jhalfs
+        #   build, and only if you need changing the build scripts order
+        #   or add a new one.

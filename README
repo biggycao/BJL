@@ -1,0 +1,412 @@
+1. INTRODUCTION::
+
+      The scripts in this directory implement an automation of the building
+   of a GNU/LInux system, as described in the Linux From Scratch book series.
+   The name of the project is jhalfs: in that name, "alfs" stands for
+   "automated linux from scratch", and the initials "jh" have been kept since
+   the original "jhalfs-0.2" code developed by Jeremy Huntwork.
+
+      The list of supported books can be found at
+   http://wiki.linuxfromscratch.org/alfs/wiki/SupportedBooks (maybe outdated,
+   current develoment books and latest version are always supported).
+
+      The documentation is split among various README.* files. Here is a list
+   of what is in which:
+      - README (this file): instructions to use the LFS book. This should be
+        enough if you just want to build a base system as per the LFS book. It
+        is also a required reading for all the other projects.
+      - README.BLFS: instructions to install an automated build infrastructure
+        for the BLFS book. There are two ways to do so: (i) install the
+        tools at the end of an LFS build, or
+        (ii) install the tools on an already running system. Both methods are
+        described in that file.
+      - README.CUSTOM: instructions to run custom commands either during the LFS
+        build, or at the end of a LFS build. Note that you will not find
+        instructions on how to write those commands, but some examples are
+        available.
+      - README.PACKAGE_MANAGEMENT: instructions to use package management during
+        the build (Note: the only package manager that is regularly tested is
+        porg)
+
+      Other sources of information are the context help in the menu interface,
+   and the LFS books themselves (both required readings of course!).
+
+2. PREREQUISITES::
+
+      It is strongly advised that you first build manually a complete system
+   before attempting to automate the build.
+
+      Of course the "Host System Requirements" should be fulfilled. Some
+   supplementary packages are needed for using jhalfs. They are detailed
+   at the bottom of the page:
+   https://www.linuxfromscratch.org/alfs/download.html. In short, you need
+   wget, sudo, libxml2, libxslt, docbook-4.5-xml, and docbook-xsl-nons.
+
+3. INSTALLATION::
+
+      No installation is required. You may want to move the files in this
+   directory to a convenient location, and then follow the instructions below.
+
+4. CONFIGURATION::
+
+   4.1. CONFIGURATION OF THE TOOLS:
+         There is no configuration of the tools themselves. The various
+      parameters for the build are set through a menu driven interface. See
+      the section RUNNING below for details.
+
+   4.2. PRELIMINARY TASKS:
+         This tool has no support at all for creating a partition and a mount
+      point for the built system. You should follow the book up to the section
+      "Mounting the new partition". Note that the default name for the
+      partition mount point is "/mnt/build_dir", instead of /mnt/lfs.
+      You can change that default to anything you'd like in the menu, so you
+      may name it /mnt/lfs if you prefer . We'll use the name /mnt/build_dir
+      in the sequel.
+
+         For downloading packages, you can use the tool or download them
+      yourself. Even if using the tool, it is recommended to set up a source
+      repository where you store already downloaded packages. The tool will
+      automatically search a package in this repository before downloading it
+      if it is not found there. This repository cannot be the same as
+      /mnt/build_dir/sources. As an example, we'll use /usr/src. You should
+      arrange for the user running the tool to have write access to this
+      directory.
+
+         If you want to build the kernel as part of the automated build,
+      a configuration file must be provided. In order to do so, it is
+      recommended to download the kernel tarball, unpack it, run
+      <make menuconfig> (or any other *config), configure the kernel as per
+      the book, and save the resulting .config file to a location where it can
+      be retrieved later on. It is suggested to put it into the source
+      repository, with a versioned name, e.g.
+      /usr/src/config-<arch>-<kernel version>-<config details>.
+
+         Another file you may provide is the fstab file. As for the kernel
+      configuration, this file has to be prepared before running the menu.
+      You can copy-paste the file from the "Creating the /etc/fstab File"
+      page, then edit to suit the future lfs system layout, then save the
+      file. A convenient location and name is /usr/src/fstablfs.
+
+         At a more advanced level, you may want to supply custom commands
+      to be run at the end of LFS build. Scripts containing those commands
+      are located in the ./custom/config directory. Examples are given in
+      ./custom/examples. A template is provided as ./custom/template. See
+      README.CUSTOM for more details.
+
+5. RUNNING::
+
+   IMPORTANT::
+         You must be logged as a normal user with sudo privileges to run
+      the Makefile. Furthermore, you are supposed to have enough privilege
+      to become any user. If you are not bothered about security issues,
+      the entry for the user running the tool in /etc/sudoers could be
+      <user> ALL=(ALL) NOPASSWD:ALL
+
+      The command <make> will launch a menu based configuration program,
+   similar to the kernel "menuconfig" configuration tool.
+
+      Help on parameter function is available from the on-line help (type the
+   character `?' after highlighting the parameter). Please do use the help:
+   it may contain additional information not duplicated in this file.
+
+   MENU "BOOK Settings"
+
+      Use BOOK: You have three choices: LFS System V, LFS systemd, BLFS.
+         The BLFS part is described in README.BLFS
+
+      Book version: You have two choices: "Branch" or "Working Copy"
+         Branch will have the tool clone the book's git repository. The
+      choice of the branch (actually any git commit) or of the file
+      location for the working copy is done in the next menu entry.
+
+      Multilib: Four choices: Normal LFS, Multilib with i686 libraries,
+      multilib with x32 libraries, multilib with all libraries.
+         It is recommended to use "Normal LFS" unless you know what you
+      are doing
+
+      Build method: two choices: chroot (as in book), boot
+         Presently, the "boot" method is not implemented, so keep the default.
+
+      Add blfs-tools support (see README.BLFS)
+         This will install the blfs tools onto the newly built system. It
+      is not the same thing as choosing the BLFS book in the menu, which
+      will install the blfs tools on the currently running system.
+
+      Add custom tools support (see README.CUSTOM)
+
+   MENU "General Settings"
+
+      Build Directory: the name of the root of the LFS system
+         This is the equivalent of the LFS variable in the book. Set it
+      to "/mnt/lfs" if you have followed the book for creating the LFS
+      partition and mount point.
+
+      Retrieve source files: Say y to have jhalfs download the packages
+         If you say no, you must download the packages yourself and put
+      them into the /mnt/build_dir/sources directory. Follow book's
+      chapter 3 instructions.
+         If you say yes, you'll be asked several other questions:
+         - Package Archive Directory: Repository of downloaded packages
+            This directory, which is on the host and should be writable
+         by the user running the tool, is for storing downloaded packages.
+            If you keep the default "$SRC_ARCHIVE", you can set this variable
+         to the absolute path of the repository and export it. Or if the
+         variable is not set, jhalfs downloads the sources directly to
+         /mnt/build_dir/sources.
+            Instead of using the SRC_ARCHIVE envar, you can also enter the
+         path of the repository directory into this field.
+         - Retry on 'connection refused' failure: self explanatory
+         - Number of retry attempts on download failures: self explanatory
+         - Download timeout (in seconds): self explanatory
+
+      Run the makefile: start the build immediately after running the tool
+         This is not the preferred method: it is recommended to rather
+      run "make -C /mnt/build_dir/jhalfs" after the tool has finished
+      setting up the build. But this may be handy if you are sure everything
+      is well, and want to leave the tool and the build run without
+      supervision.
+
+      Rebuild files: clean up the /mnt/build_dir directory
+         Say n if you want to rerun the tool (to update generated scripts
+      for example) without removing what has already been done. Otherwise,
+      say y. Note that there are some guards against removing a directory
+      containing useful things, but double check that the /mnt/build_dir
+      directory is really what you want to erase.
+
+   MENU "Build Settings"
+
+      MENU Parallelism settings
+       - Use all cores:
+            If you say y, MAKEFLAGS will be set to "-j$(nproc)" at the
+         beginning of each script. Other envars are supposed to be passed
+         from the environment, as done in new books. Note that for old books,
+         this means the scripts using make or ninja will be run with all
+         cores, but not when this needs to set special envars like
+         TESTSUITEFLAGS. You can still define the number of cores used
+         in next field.
+            If you say n, you'll be asked for a static number of threads
+         to use.
+       - set of cpus to use, or 'all' for all cpus (only if using all cores):
+            You can define here the cores you want to use. See help for
+         details. This is the preferred way of reducing the number of cores
+         rather than using a static thread number.
+       - Number of parallel `make' jobs (only if not using all cores):
+            Every occurrence of $(nproc) in new books will be replaced with
+         the number entered here. Also MAKEFLAGS will be set to "-jN" (where
+         N is the number entered) at the beginning of each scripts. Furthermore
+         NINJAJOBS will be set to N in the environment. This allows to run all
+         books with N threads, except for paarts that need other envars to be
+         set
+       - Build Binutils pass1 without parallelism (Real SBU)
+            The standard SBU is defined as the time to run the binutils-pass1
+         build with only one thread. Saying y here allows to get a value for
+         it. If you say n, the value is not meaningful for SBU measurements.
+
+      Run testsuites: say y to run the test suites
+         You'll have the choice between running all the test suites, or only
+      those deemed critical (binutils, gmp, mpfr, mpc, and gcc).
+
+      Package management: see README.PACKAGE_MANAGEMENT
+
+      Create a log of installed files for each package: self explanatory
+
+      Strip Installed Binaries/Libraries: use the book instructions for
+      stripping
+
+      DO NOT use/display progress_bar (self explanatory)
+
+   MENU System configuration
+
+      Use a custom fstab file:
+         If you say y, you'll have to provide a file containing the fstab
+      for the LFS system. See above "preliminary tasks".
+
+      Build the kernel:
+         If you say y, you'll be asked for a file containing the kernel
+      configuration. See above "preliminary tasks".
+
+      Install non-wide-character ncurses (rarely used nowadays):
+         If you say y, the system will use instructions in the note on the
+      ncurses page to install those libraries.
+
+      TimeZone: set to the result of "tzselect"
+
+      Language: set to the result of the instructions on "The Bash Shell
+      Startup Files" page.
+
+      Install the full set of locales: installs all the locales known to
+      glibc.
+
+      Groff page size: choice between "A4" and "Letter".
+
+      Hostname: self explanatory
+
+      Network configuration: various fields for setting network. Look at
+      chapter 9 for background.
+
+      Console configuration: various fields for setting console, as described
+      in chapter 9.
+
+   MENU Advanced features:
+
+      Optimization: Optimization settings are done by editing files in the
+      "optimize" directory. The menu just allows you to choose between applying
+      optimizations only to the final chapter or to all the book. Say n for
+      a normal build
+
+      Create SBU and disk usage report: self explanatory
+
+      Save temporary system work: self explanatory (see help)
+
+      Run comparison analysis on final stage: build the system several times
+      using the preceding one, to test whether it is able to rebuild itself
+      identically. Don't use normally...
+
+      Internal Settings (WARNING: for jhalfs developers only): says it all
+
+     Once you have set the parameters and saved the configuration, the script
+  is launched. Its aim is to extract instructions from the selected book
+  to generate scripts, and to generate a Makefile, which allows running
+  the scripts in the right order. The script verifies first that the host
+  can run itself and build the xLFS system, then validates the configuration
+  and lists the parameters. At this point, you may choose to quit or to
+  continue with the listed parameters. The script will then proceed to
+  generate the Makefile and the build scripts, optionally download
+  packages, and eventually verify the host prerequisite. If you have
+  selected "Run the makefile", the command <make> is launched in the
+  adequate directory, and the build begins. If not, you'll have to run
+  "make" manually, for example: "make -C /mnt/build_dir/jhalfs", if you
+  have used the default parameters (see the layout under $BUILDDIR in the
+  Q&A below).
+
+  NOTE::
+      If you run the jhalfs script directly the only function you can select
+      is to display the version number by running <./jhalfs -v>
+
+6. LAYOUT::
+
+        /BLFS/* (see README.BLFS)
+
+        /LFS/master.sh
+            /lfs.xsl
+
+        /common/chroot.xsl
+               /common_functions
+               /create-sbu_du-report.sh
+               /hostreqs.xsl
+               /kernfs.xsl
+               /makefile_functions
+               /packages.xsl
+               /progress_bar.sh
+               /urls.xsl
+               /libs/func_*
+
+        /custom/examples/*
+               /config/* (needs to be created after cloning since it is an
+                          empty directory initially)
+               /template
+
+        /extras/do_copy_files
+               /do_ica_prep
+               /do_ica_work
+
+        /menu/*
+
+        /optimize/opt_config
+                 /opt_override
+                 /optimize_functions
+                 /opt_config.d/noOpt
+                              /noSymbols
+                              /O2pipe
+                              /O3pipe
+                              /O3pipe_march
+                              /defOpt_fPIC
+
+        /pkgmngt/packageManager.xml.dpkg
+                /packageManager.xml.pacman
+                /packageManager.xml.porg
+                /packageManager.xml.template
+                /packInstall.sh.dpkg
+                /packInstall.sh.pacman
+                /packInstall.sh.porg
+                /packInstall.sh.template
+
+        CHEATSHEET
+        FUNCTION_LIST
+        LICENSE
+        README
+        README.BLFS
+        README.CUSTOM
+        README.PACKAGE_MANAGEMENT
+        TODO
+
+        Config.in
+        jhalfs
+        Makefile
+
+7. FAQ::
+    Q. "It doesn't work"
+    A. There are several reasons why it may be so. One possibility is the
+       following: jhalfs was designed to work against the development versions
+       of the LFS series of books. Consequently changes in a book sometimes
+       break older versions of jhalfs. Before you start pulling out your hair,
+       download the latest version of jhalfs to see if that solves your
+       problem. Note that it may be the other way around. If you want to build
+       an old version of the book, you may have to downgrade your jhalfs
+       version.
+
+    Q. "How do I specify the build location?"
+    A. The original LFS document worked against the well known location
+       /mnt/lfs. This script automates the build of all of the LFS series of
+       books and uses a generic location $BUILDDIR with a default value of
+       /mnt/build_dir. You may change this value to suit your needs.
+
+       The layout below $BUILDDIR is as follows.
+       $BUILDDIR/
+            jhalfs      (Makefile, cmd scripts, logs, etc..)
+            sources     (where packages reside)
+            tools       (temporary cross compiler)
+                ...
+            FHS dir structure
+                ...
+            blfs_root   (files to use blfs-tool if selected to install it)
+
+    Q. "What is the function of the SRC_ARCHIVE variable?"
+    A. When jhalfs runs and packages download was selected, it creates a local
+       copy of the necessary packages in $BUILDDIR/sources by downloading the
+       files. If the variable SRC_ARCHIVE is defined the software will first
+       look in this location for the file and, if found, will copy it to
+       $BUILDDIR/sources.
+       If the files are not found in SRC_ARCHIVE _and_ you have write priv to
+       the directory any downloaded files will be mirrored there.
+
+    Q. "How do I set the SRC_ARCHIVE location?"
+    A. The best way to set the value of SRC_ARCHIVE is
+
+       export SRC_ARCHIVE=/wherever/you/store/downloaded/packages
+
+       or you can set the full path in the proper menu entry.
+
+    Q. "Why have 2 copies of the files?"
+    A. The package files must be visible during the chroot phase and this is a
+       simple and reliable method of doing so. This method also handles the
+       boot build method where the final build may be done on a separate
+       machine.
+
+    Q. "How could I stop the build at a predefined chosen point?"
+    A. Launch the Makefile manually passing the last numbered target to be build
+       as the break point. For example:
+
+          make BREAKPOINT=84-bash
+
+       The build can be stopped also at the end of a top-level build phase by
+       calling directly the appropriate mk_* target. For example:
+
+          make mk_LUSER
+
+       See the Makefile to know the proper target names for that book build.
+
+Authors:
+  George Boudreau
+  Manuel Canales Esparcia
+  Pierre Labastie

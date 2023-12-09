@@ -1,0 +1,64 @@
+# function for packing and installing a tree. We only have access
+# to variables PKGDIR and PKG_DEST
+# Other variables can be passed on the command line, or in the environment
+
+packInstall() {
+
+# A proposed implementation for versions and package names.
+local PCKGVRS=$(basename $PKGDIR)
+local TGTPKG=$(basename $PKG_DEST)
+local PACKAGE=$(echo ${TGTPKG} | sed 's/^[0-9]\{3,4\}-//' |
+           sed 's/^[0-9]\{2\}-//')
+# version is only accessible from PKGDIR name. Since the format of the
+# name is not normalized, several hacks are necessary...
+case $PCKGVRS in
+  expect*|tcl*) local VERSION=$(echo $PCKGVRS | sed 's/^[^0-9]*//') ;;
+  unzip*) local VERSION=$(echo $PCKGVRS | sed 's/^[^0-9]*\([0-9]\)\([0-9]\)/\1.\2/') ;;
+  docbook-xml) local VERSION=4.5 ;;
+  *) local VERSION=$(echo ${PCKGVRS} | sed 's/^.*[-_]\([0-9]\)/\1/' |
+                   sed 's/_/./g');;
+# the last sed above is because some package managers do not want a '_'
+# in version.
+esac
+case $(uname -m) in
+  x86_64) local ARCH=x86_64 ;;
+  *) local ARCH=i686 ;;
+esac
+local ARCHIVE_NAME=${PACKAGE}-${VERSION}-1-${ARCH}.pkg.tar.gz
+
+pushd $PKG_DEST
+rm -fv ./usr/share/info/dir  # recommended since this directory is already there
+                             # on the system
+# Right now, we have the files in the current directory. They should be moved
+# to /sources/$PACKAGE/src. Also, in case there was a failure before, clean
+# /sources/$PACKAGE
+rm -rf /sources/$PACKAGE
+mkdir -p /sources/$PACKAGE/src
+
+# We'll build as user builder. We need this directory to be owned by that user.
+chown -R builder /sources/$PACKAGE
+mv * /sources/$PACKAGE/src
+chown -R builder $PKG_DEST
+chmod -R o+r /sources/$PACKAGE
+
+cat > PKGBUILD <<EOF
+pkgname=( '$PACKAGE' )
+pkgver=$VERSION
+pkgrel=1
+pkgdesc=$PACKAGE
+arch=( '$ARCH' )
+
+package() {
+cp -a * \$pkgdir
+}
+EOF
+# Building the binary package
+su builder -c"PATH=$PATH; makepkg -c --skipinteg" || true
+# Installing it on LFS
+if ! pacman -U --noconfirm /var/lib/packages/$ARCHIVE_NAME; then
+     pacman -U --noconfirm --overwrite '*' /var/lib/packages/$ARCHIVE_NAME
+fi
+popd                         # Since the $PKG_DEST directory is destroyed
+                             # immediately after the return of the function,
+                             # getting back to $PKGDIR is important...
+}

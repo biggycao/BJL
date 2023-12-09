@@ -1,0 +1,15 @@
+PKG="glib"
+PKG_VERSION="2.44.1"
+PKG_FILE="glib-2.44.1.tar.xz"
+URL="http://ftp.gnome.org/pub/gnome/sources/glib/2.44/${PKG_FILE}"
+MD5="83efba4722a9674b97437d1d99af79db"
+for i in PATCH{1..10}; do
+   unset $i
+done
+
+( cat << "xEOFx"
+./configure --prefix=/usr --with-pcre=system &&
+make
+make install
+xEOFx
+) > tmp

@@ -1,0 +1,149 @@
+#!/bin/bash
+
+#----------------------------#
+get_sources() {              # Download file, write name to MISSING_FILES.DMP if an error
+#----------------------------#
+
+    # Test if the packages must be downloaded
+  [ "$GETPKG" = y ] || return 0
+
+  local URL FILE BOOKMD5 MD5 HAVEMD5 fromARCHIVE WGETPARAM MAYBEMORE
+
+  WGETPARAM=""
+  if [[ "${RETRYSRCDOWNLOAD}" = "y" ]] ; then
+    WGETPARAM+="--retry-connrefused"
+  fi
+  WGETPARAM+=" --tries ${RETRYDOWNLOADCNT}"
+  WGETPARAM+=" --timeout ${DOWNLOADTIMEOUT}"
+
+  gs_wrt_message(){
+    echo "${RED}$1${OFF}"
+    echo "$1" >> MISSING_FILES.DMP
+  }
+    # Housekeeping
+  [[ ! -d $BUILDDIR/sources ]] && mkdir $BUILDDIR/sources
+  cd $BUILDDIR/sources
+
+    # Generate URLs file
+  create_urls
+
+    # Clean up leftovers from preceding attempts
+  >MISSING_FILES.DMP
+
+    # Normally, urls.lst contains lines with two fields:
+    # <package url> <book md5>, but
+    # if a custom patch has an md5, there is a third field
+    # on the line, due to the way add_CustomToolsURLS works.
+  cat urls.lst | while read URL BOOKMD5 MAYBEMORE; do
+    FILE=$(basename "$URL") # File name
+
+      # Validation pair
+    MD5="$BOOKMD5  $FILE"
+    HAVEMD5=1
+
+    set -e
+      # If the file exists in the archive, copy it to the
+      # $BUILDDIR/sources dir. MD5SUM will be validated later.
+    if [ -n "${SRC_ARCHIVE}" ] &&
+       [ -d "${SRC_ARCHIVE}" ] &&
+       [ -f "${SRC_ARCHIVE}/$FILE" ]; then
+      cp "${SRC_ARCHIVE}/$FILE" .
+      echo "$FILE: -- copied from $SRC_ARCHIVE"
+      fromARCHIVE=1
+    else
+      fromARCHIVE=0
+      # If the file does not exist yet in /sources, download a fresh one
+      if [ ! -f "$FILE" ] ; then
+	if [ -n "$SRC_ARCHIVE" ] ; then
+	  echo "${BOLD}${YELLOW}$FILE: not found in ${SRC_ARCHIVE} nor in ${BUILDDIR}/sources${OFF}"
+	else
+	  echo "${BOLD}${YELLOW}$FILE: not found in ${BUILDDIR}/sources${OFF}"
+	fi
+        if ! wget "$URL" $WGETPARAM; then
+          gs_wrt_message "$FILE not found on any server..SKIPPING"
+          continue
+        fi
+      else
+	  echo "${BOLD}${YELLOW}$FILE: using cached file in ${BUILDDIR}/sources${OFF}"
+      fi
+    fi
+
+    # Deal with bootscripts md5sum issue,
+    # or skip if it is a custom patch without md5
+    [ $BOOKMD5 = "BOOTSCRIPTS-MD5SUM"  ] && continue
+    [ $BOOKMD5 = "CUSTOM-PATCH-MD5SUM" ] && continue
+
+      # IF the md5sum does not match
+    if ! echo "$MD5" | md5sum -c - >/dev/null ; then
+      [ "$fromARCHIVE" = 1 ] && echo "${BOLD}${YELLOW}MD5SUM did not match $SRC_ARCHIVE copy${OFF}"
+      [ "$fromARCHIVE" = 0 ] && echo "${BOLD}${YELLOW}MD5SUM did not match REMOTE copy${OFF}"
+        # Remove the old file and download a new one
+      rm -fv "$FILE"
+        # Force storage in SRC_ARCHIVE
+      fromARCHIVE=0;
+        # Try to retrieve again the file.
+      if ! wget "$URL" $WGETPARAM; then
+        gs_wrt_message "$FILE not found on the server... SKIPPING"
+        continue
+      fi
+    fi
+
+      # Validate the MD5SUM one last time
+    if ! echo "$MD5" | md5sum -c - >/dev/null ; then
+      gs_wrt_message "$FILE does not match MD5SUMS value"
+      # Force generation of MD5SUM
+      HAVEMD5=0
+    fi
+
+      # Generate a fresh MD5SUM for this file
+    if [ "$HAVEMD5" = "0" ] ; then
+      echo "${BOLD}${YELLOW}Generating a new MD5SUM for ${OFF}$FILE"
+      echo "NEW MD5SUM: $(md5sum $FILE)" >> MISSING_FILES.DMP
+    fi
+
+      # Good or bad we write the original md5sum to a file
+    echo "$MD5" >> MD5SUMS
+
+     # Copy the freshly downloaded file
+     # to the source archive.
+   if [ -n "${SRC_ARCHIVE}"  ] &&
+      [ -d "${SRC_ARCHIVE}"  ] &&
+      [ -w "${SRC_ARCHIVE}"  ] &&
+      [ ! -f "${SRC_ARCHIVE}/$FILE" ] &&
+      [ "$fromARCHIVE" = 0 ] ; then
+        echo "Storing file:<$FILE> in the package archive"
+        cp -f "$FILE" "${SRC_ARCHIVE}"
+   fi
+
+  done
+
+  if [[ -s MISSING_FILES.DMP ]]; then
+    echo  -e "\n\n${tab_}${RED} One or more files were not retrieved or have bad MD5SUMS.\n${tab_} Check ${L_arrow}$BUILDDIR/sources/MISSING_FILES.DMP${R_arrow} for names ${OFF}\n"
+      # Do not allow the automatic execution of the Makefile.
+    echo "${tab_}${BOLD}${RED}*** ${YELLOW}Automatic execution of the generated makefile has been inhibited. ${RED}***${OFF}${nl_}"
+    RUNMAKE="n"
+  fi
+}
+
+#----------------------------#
+create_urls() {              #
+#----------------------------#
+  cd $JHALFSDIR
+
+  echo -n "Creating URLs file... "
+  xsltproc --nonet --xinclude                \
+           --stringparam pkgmngt "$PKGMNGT"  \
+           --stringparam revision "$INITSYS" \
+           --output ../sources/urls.lst      \
+           urls.xsl                          \
+           $BOOK/chapter03/chapter03.xml >>$LOGDIR/$LOG 2>&1
+  echo "OK"
+
+  cd $BUILDDIR/sources
+
+  if [[ "${CUSTOM_TOOLS}" = "y" ]]; then
+    add_CustomToolsURLS
+  fi
+
+}
+

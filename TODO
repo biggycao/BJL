@@ -1,0 +1,11 @@
+            jhalfs TODO
+          ---------------
+Remove RUN_ICA (it is redundant with COMPARE)
+BLFS MODULE (See BLFS/TODO)
+-----------
+
+
+OTHERS
+------
+
+  - Bugs hunting and code clean-up.

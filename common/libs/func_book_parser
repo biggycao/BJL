@@ -1,0 +1,180 @@
+#!/bin/bash
+
+#----------------------------#
+get_book() {                 #
+#----------------------------#
+  cd $JHALFSDIR
+
+  if [ -z "$WORKING_COPY" ] ; then
+# Check for Subversion or git instead of just letting the script fail.
+    test `type -p git` || eval "echo \"This feature requires Git.\"
+    exit 1"
+
+    echo -n "Downloading the lfs document, branch/tag/commit: $COMMIT... "
+
+    # Grab a fresh book if it's missing, otherwise, update it from the
+    # repo. If we've already extracted the commands, move on to getting the
+    # sources.
+    if [ ! -d "$BOOK"/.git ]; then
+        git clone "$REPO" "$BOOK" >>"$LOGDIR/$LOG" 2>&1
+        if [ "$COMMIT" != trunk ]; then
+           pushd "$BOOK" >/dev/null
+           echo "Checking out $COMMIT at $PWD"
+           git checkout "$COMMIT" >>"$LOGDIR/$LOG" 2>&1
+           popd >/dev/null
+        fi
+    else
+      cd "$BOOK"
+      # If the repo is in "detached head" state, git pull fails, so get
+      # back first to trunk:
+      git checkout trunk >>"$LOGDIR/$LOG" 2>&1
+      git pull >>"$LOGDIR/$LOG" 2>&1
+      if [ "$COMMIT" != "trunk" ]; then
+         git checkout "$COMMIT" >>"$LOGDIR/$LOG" 2>&1
+      fi
+    fi
+    echo -ne "done\n"
+
+  else # Working copy
+    echo -ne "Using $BOOK as book's sources ...\n"
+  fi
+}
+
+#----------------------------#
+extract_commands() {         #
+#----------------------------#
+
+  cd $JHALFSDIR
+  # Clean
+  rm -rf "$COMMANDS"
+
+  # Extract the commands
+  echo -n "Extracting commands for"
+  echo -n " ${L_arrow}${BOLD}LFS${R_arrow} build... "
+  # The scripts pages are xincluded by the book, so must
+  # be generated for running xsltproc
+  pushd $BOOK > /dev/null
+  if [ -f process-scripts.sh ]; then
+    bash process-scripts.sh >> $LOGDIR/$LOG 2>&1
+  fi
+  # Recent git versions need version.ent to be generated
+  if [ -f git-version.sh ]; then
+    bash git-version.sh "$INITSYS" >> $LOGDIR/$LOG 2>&1
+  fi
+  popd > /dev/null
+
+  if [ "$ALL_CORES" = "y" ]; then
+	  JOBS="\$(nproc)"
+  else
+	  JOBS="$N_PARALLEL"
+  fi
+  if [ "$REALSBU" = y ]; then JOBSBP1=1; else JOBSBP1="$JOBS"; fi
+
+  # First profile the book, for revision and arch. Note that
+  # MULTIBLIB is set to "default" if pure 64 bit book. In this case,
+  # profiling on arch is useless, but does not hurt either.
+  xsltproc --nonet                                      \
+           --xinclude                                   \
+           --stringparam profile.revision "$INITSYS"    \
+           --stringparam profile.arch     "$MULTILIB"   \
+           --output prbook.xml                          \
+           $BOOK/stylesheets/lfs-xsl/profile.xsl        \
+           $BOOK/index.xml >> $LOGDIR/$LOG 2>&1
+
+  # Use the profiled book for generating the scriptlets
+  xsltproc --nonet                                      \
+           --stringparam testsuite      "$TEST"         \
+           --stringparam ncurses5       "$NCURSES5"     \
+           --stringparam strip          "$STRIP"        \
+           --stringparam del-la-files   "$DEL_LA_FILES" \
+           --stringparam full-locale    "$FULL_LOCALE"  \
+           --stringparam timezone       "$TIMEZONE"     \
+           --stringparam page           "$PAGE"         \
+           --stringparam lang           "$LANG"         \
+           --stringparam pkgmngt        "$PKGMNGT"      \
+           --stringparam wrap-install   "$WRAP_INSTALL" \
+           --stringparam hostname       "$HOSTNAME"     \
+           --stringparam interface      "$INTERFACE"    \
+           --stringparam ip             "$IP_ADDR"      \
+           --stringparam gateway        "$GATEWAY"      \
+           --stringparam prefix         "$PREFIX"       \
+           --stringparam broadcast      "$BROADCAST"    \
+           --stringparam domain         "$DOMAIN"       \
+           --stringparam nameserver1    "$DNS1"         \
+           --stringparam nameserver2    "$DNS2"         \
+           --stringparam font           "$FONT"         \
+           --stringparam fontmap        "$FONTMAP"      \
+           --stringparam unicode        "$UNICODE"      \
+           --stringparam keymap         "$KEYMAP"       \
+           --stringparam local          "$LOCAL"        \
+           --stringparam log-level      "$LOG_LEVEL"    \
+           --stringparam script-root    "$SCRIPT_ROOT"  \
+           --stringparam jobs           "$JOBS"         \
+           --stringparam jobs-bp1       "$JOBSBP1"      \
+           --output "./${COMMANDS}/"                    \
+           $XSL                                         \
+           prbook.xml >> $LOGDIR/$LOG 2>&1
+  # Remove flags requesting user action in some cases. Much easier here than
+  # in the stylesheet...
+  sed -i 's/-iv /-v /' "./${COMMANDS}/"chapter??/*kernel*
+  # If doing a destdir install (PM without wrap), the gcc instructions
+  # fail for two reasons: a missing dir, and gcc -dumpmachine returns a
+  # wrong string.
+  if [ "$PKGMNGT" = y ] && [ "$WRAP_INSTALL" = n ]; then
+    sed -e 's|(gcc|&/xgcc|' \
+        -e '/lto_plug/imkdir -pv $PKG_DEST/usr/lib/bfd-plugins' \
+        -i ./${COMMANDS}/chapter08/*gcc
+  fi
+  echo "done"
+
+  # Make the scripts executable.
+  chmod -R +x "$JHALFSDIR/${COMMANDS}"
+  create_chroot_scripts
+  create_kernfs_scripts
+
+  # we create the VERSION variable here. Should maybe go into its own
+  # function. But at this point we can use the profiled xml to get
+  # version from lfs-release in the lfs case.
+  VERSION=$(grep 'echo.*lfs-release' prbook.xml | sed 's/.*echo[ ]*\([^ ]*\).*/\1/')
+
+  # Done. Moving on...
+  get_sources
+}
+
+#----------------------------#
+create_chroot_scripts() {    #
+#----------------------------#
+
+  rm -rf chroot-scripts
+  echo -n "Creating chroot commands scripts from $BOOK"
+  if [ ! -z $ARCH ] ; then echo -n " $ARCH" ; fi
+  echo -n "... "
+  xsltproc --nonet --xinclude \
+           --stringparam jobs_2 "$JOBS_2" \
+           -o chroot-scripts/ chroot.xsl  \
+           $BOOK/chapter0?/*chroot*.xml >> $LOGDIR/$LOG 2>&1
+  echo "done"
+
+}
+
+#----------------------------#
+create_kernfs_scripts() {    #
+#----------------------------#
+
+  rm -rf kernfs-scripts
+  mkdir kernfs-scripts
+  echo -n "Creating virtual kernel FS commands scripts from $BOOK"
+  if [ ! -z $ARCH ] ; then echo -n " $ARCH" ; fi
+  echo -n "... "
+  xsltproc --nonet \
+           -o kernfs-scripts/devices.sh kernfs.xsl \
+           $BOOK/*/kernfs.xml >> $LOGDIR/$LOG 2>&1
+  chmod +x kernfs-scripts/devices.sh
+  xsltproc --nonet \
+           -o kernfs-scripts/teardown.sh kernfs.xsl \
+           $BOOK/chapter??/reboot.xml >> $LOGDIR/$LOG 2>&1
+  chmod +x kernfs-scripts/teardown.sh
+
+  echo "done"
+
+}
