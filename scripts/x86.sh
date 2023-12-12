@@ -1,3 +1,5 @@
+mkdir $HOME/bjlbackup
+cp ./* $HOME/bjlbackup
 echo "3.1 INTRO"
 mkdir -v /mnt/lfs/sources
 chmod -v a+wt /mnt/lfs/sources
@@ -19,4 +21,10 @@ case $(uname -m) in
 esac
 mkdir -pv $LFS/tools
 
-
+groupadd lfs
+useradd -s /bin/bash -g lfs -m -k /dev/null lfs
+passwd lfs
+chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
+mkdir /home/lfs/bjl
+cp $HOME/bjlbackup /home/lfs/bjl
+su - lfs
