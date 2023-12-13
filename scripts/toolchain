@@ -109,3 +109,137 @@ sed -i 's/extras//' Makefile.in
             --build=$(build-aux/config.guess)
 make
 make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r gawk-5.2.2
+tar -xf grep-3.11.tar.xz
+cd grep-3.11
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(./build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r grep-3.11
+tar -xf gzip-1.12.tar.xz
+cd gzip-1.12
+./configure --prefix=/usr --host=$LFS_TGT
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r gzip-1.12
+tar -xf make-4.4.1.tar.gz
+cd make-4.4.1
+./configure --prefix=/usr   \
+            --without-guile \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r make-4.4.1
+tar -xf patch-2.7.6.tar.xz
+cd patch-2.7.6
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r patch-2.7.6
+tar -xf sed-4.9.tar.xz
+cd sed-4.9
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(./build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r sed-4.9
+tar -xf tar-1.35.tar.xz
+cd tar-1.35
+./configure --prefix=/usr                     \
+            --host=$LFS_TGT                   \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=$LFS install
+cd $LFS/sources
+rm -r tar-1.35
+tar -xf xz-5.4.4.tar.xz
+cd xz-5.4.4
+./configure --prefix=/usr                     \
+            --host=$LFS_TGT                   \
+            --build=$(build-aux/config.guess) \
+            --disable-static                  \
+            --docdir=/usr/share/doc/xz-5.4.4
+make
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/liblzma.la
+cd $LFS/sources
+rm -r xz-5.4.4
+tar -xf binutils-2.41.tar.xz
+cd binutils-2.41
+sed '6009s/$add_dir//' -i ltmain.sh
+mkdir -v build
+cd       build
+../configure                   \
+    --prefix=/usr              \
+    --build=$(../config.guess) \
+    --host=$LFS_TGT            \
+    --disable-nls              \
+    --enable-shared            \
+    --enable-gprofng=no        \
+    --disable-werror           \
+    --enable-64-bit-bfd
+make
+make DESTDIR=$LFS install
+rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+cd $LFS/sources
+rm -r binutils-2.41
+tar -xf gcc-13.2.0.tar.xz
+cd gcc-13.2.0
+tar -xf ../mpfr-4.2.0.tar.xz
+mv -v mpfr-4.2.0 mpfr
+tar -xf ../gmp-6.3.0.tar.xz
+mv -v gmp-6.3.0 gmp
+tar -xf ../mpc-1.3.1.tar.gz
+mv -v mpc-1.3.1 mpc
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
+
+case $(uname -m) in
+  aarch64)
+    sed -e '/lp64=/s/lib64/lib/' -i.orig gcc/config/aarch64/t-aarch64-linux
+  ;;
+esac
+
+sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+    -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
+
+mkdir -v build
+cd       build
+../configure                                       \
+    --build=$(../config.guess)                     \
+    --host=$LFS_TGT                                \
+    --target=$LFS_TGT                              \
+    LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc      \
+    --prefix=/usr                                  \
+    --with-build-sysroot=$LFS                      \
+    --enable-default-pie                           \
+    --enable-default-ssp                           \
+    --disable-nls                                  \
+    --disable-multilib                             \
+    --disable-libatomic                            \
+    --disable-libgomp                              \
+    --disable-libquadmath                          \
+    --disable-libsanitizer                         \
+    --disable-libssp                               \
+    --disable-libvtv                               \
+    --enable-languages=c,c++
+make
+make DESTDIR=$LFS install
+ln -sv gcc $LFS/usr/bin/cc
+cd $LFS/sources
+rm -r gcc-13.2.0
