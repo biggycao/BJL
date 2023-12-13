@@ -1,3 +1,7 @@
+LFS=/mnt/lfs
+LFS_TGT=$(uname -m)-lfs-linux-gnu
+MAKEFLAGS=-j$(nproc)
+
 echo "COMPILE CROSS-TOOLCHAIN-BINUTILS"
 cd /mnt/lfs/sources
 tar -xf binutils-2.41.tar.xz
