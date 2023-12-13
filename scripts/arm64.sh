@@ -2,6 +2,8 @@ LFS=/mnt/lfs
 LFS_TGT=$(uname -m)-lfs-linux-gnu
 MAKEFLAGS=-j$(nproc)
 
+mkdir $HOME/BJLtempins
+cp ./* $HOME/BJLtempins
 echo "COMPILE CROSS-TOOLCHAIN-BINUTILS"
 cd /mnt/lfs/sources
 tar -xf binutils-2.41.tar.xz
@@ -103,3 +105,4 @@ cd       build
 make
 make DESTDIR=/mnt/lfs install
 rm -v /mnt/lfs/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+sh $HOME/toolchain
