@@ -21,8 +21,4 @@ cat >> ~/.bashrc << "EOF"
 export MAKEFLAGS=-j$(nproc)
 EOF
 
-cat >> ~/.bashrc << "EOF"
-export MAKEFLAGS=-j$(nproc)
-EOF
-
 source ~/.bash_profile
