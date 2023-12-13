@@ -1,0 +1,44 @@
+LFS=/mnt/lfs
+LFS_TGT=$(uname -m)-lfs-linux-gnu
+cd /mnt/lfs/sources
+tar -xf m4-1.4.19.tar.xz
+cd m4-1.4.19
+./configure --prefix=/usr   \
+            --host=$LFS_TGT \
+            --build=$(build-aux/config.guess)
+make
+make DESTDIR=/mnt/lfs install
+cd /mnt/lfs/sources
+rm -r m4-1.4.19
+tar -xf ncurses-6.4.tar.gz
+cd ncurses-6.4
+sed -i s/mawk// configure
+mkdir build
+pushd build
+  ../configure
+  make -C include
+  make -C progs tic
+popd
+./configure --prefix=/usr                \
+            --host=$LFS_TGT              \
+            --build=$(./config.guess)    \
+            --mandir=/usr/share/man      \
+            --with-manpage-format=normal \
+            --with-shared                \
+            --without-normal             \
+            --with-cxx-shared            \
+            --without-debug              \
+            --without-ada                \
+            --disable-stripping          \
+            --enable-widec
+make
+make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install
+echo "INPUT(-lncursesw)" > $LFS/usr/lib/libncurses.so
+cd /mnt/lfs/sources
+rm -r ncurses-6.4
+tar -xf bash-5.2.15.tar.gz
+cd  bash-5.2.15
+./configure --prefix=/usr                      \
+            --build=$(sh support/config.guess) \
+            --host=$LFS_TGT                    \
+            --without-bash-malloc
