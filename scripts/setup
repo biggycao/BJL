@@ -81,5 +81,4 @@ echo "tester:x:101:101::/home/tester:/bin/bash" >> /etc/passwd
 echo "tester:x:101:" >> /etc/group
 install -o tester -d /home/tester
 
-echo RUN 'sh /BJL/tempchroot'
-exec /usr/bin/bash --login
+echo RUN sh /BJL/tempchroot
