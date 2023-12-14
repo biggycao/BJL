@@ -105,4 +105,4 @@ cd       build
 make
 make DESTDIR=/mnt/lfs install
 rm -v /mnt/lfs/usr/lib/lib{stdc++{,exp,fs},supc++}.la
-sh $HOME/toolchain
+sh $HOME/BJLtempins/scripts/toolchain
