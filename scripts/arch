@@ -13,7 +13,7 @@ esac
 
 case $(uname -m) in
   i686)
-    sh x86.sh; exit 0
+    sh x86_64.sh; exit 0
   ;;
 esac
 

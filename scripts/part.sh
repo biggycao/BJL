@@ -1,7 +1,6 @@
 #!/bin/bash
 lsblk -f
 read -r -p "which disk do you want to install BJL on? (example /dev/sda) " disk
-#!/bin/bash
 
 # Variables for disk and partitions
 EFI_SIZE="1G"           # Size of EFI partition
