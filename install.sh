@@ -1,1 +1,2 @@
-bash scripts/main.sh
+cd scripts
+bash /main.sh
