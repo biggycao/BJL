@@ -1,8 +1,6 @@
 LFS=/mnt/lfs
 LFS_TGT=$(uname -m)-lfs-linux-gnu
 MAKEFLAGS=-j$(nproc)
-mkdir $HOME/BJLtempins
-cp ./* $HOME/BJLtempins
 
 echo "COMPILE CROSS-TOOLCHAIN-BINUTILS"
 cd /mnt/lfs/sources
