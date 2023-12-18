@@ -243,4 +243,4 @@ make DESTDIR=$LFS install
 ln -sv gcc $LFS/usr/bin/cc
 cd $LFS/sources
 rm -r gcc-13.2.0
-sh $HOME/BJLtempins/scripts/chroot
+sh $HOME/BJLtempins/chroot
