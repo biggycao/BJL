@@ -92,3 +92,5 @@ umount /mnt/lfs/dev/pts
 umount /mnt/lfs/{sys,proc,run,dev}
 cd /mnt/lfs
 tar -cJpf $HOME/BJL-backup-EOC7 .
+echo FINISHED lol
+exit 0
