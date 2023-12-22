@@ -93,4 +93,17 @@ umount /mnt/lfs/{sys,proc,run,dev}
 cd /mnt/lfs
 tar -cJpf $HOME/BJL-backup-EOC7 .
 echo FINISHED lol
+mount -v --bind /dev $LFS/dev
+mount -v --bind /dev/pts $LFS/dev/pts
+mount -vt proc proc $LFS/proc
+mount -vt sysfs sysfs $LFS/sys
+mount -vt tmpfs tmpfs $LFS/run
+
+chroot "$LFS" /usr/bin/env -i   \
+    HOME=/root                  \
+    TERM="$TERM"                \
+    PS1='(lfs chroot) \u:\w\$ ' \
+    PATH=/usr/bin:/usr/sbin     \
+    /bin/bash --login -c "/bin/bash /BJL/setup"
+    
 exit 0
