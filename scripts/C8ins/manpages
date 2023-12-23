@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd /sources
+tar -xf man-pages-6.05.01.tar.xz
+cd man-pages-6.05.01
+rm -v man3/crypt*
+make prefix=/usr install
+exit 0
