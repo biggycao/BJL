@@ -15,3 +15,4 @@ make SHLIB_LIBS="-lncursesw" install
 install -v -m644 doc/*.{ps,pdf,html,dvi} /usr/share/doc/readline-8.2
 cd /sources
 rm -r readline-8.2
+exit 0

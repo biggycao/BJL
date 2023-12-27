@@ -7,3 +7,4 @@ make test
 make install
 cd /sources
 rm -r bc-6.6.0
+exit 0

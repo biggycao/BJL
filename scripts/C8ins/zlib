@@ -8,3 +8,4 @@ make install
 rm -fv /usr/lib/libz.a
 cd /sources
 rm -r zlib-1.2.13
+exit 0

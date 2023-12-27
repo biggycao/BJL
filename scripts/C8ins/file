@@ -6,3 +6,4 @@ make
 make install
 cd /sources
 rm -r file-5.45
+exit 0

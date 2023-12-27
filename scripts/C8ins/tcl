@@ -35,3 +35,4 @@ mkdir -v -p /usr/share/doc/tcl-8.6.13
 cp -v -r  ./html/* /usr/share/doc/tcl-8.6.13
 cd /sources
 rm -r tcl8.6.13
+exit 0

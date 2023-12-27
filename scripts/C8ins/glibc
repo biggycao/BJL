@@ -121,3 +121,4 @@ mkdir -pv /etc/ld.so.conf.d
 
 cd /sources
 rm -r glibc-2.38
+exit 0

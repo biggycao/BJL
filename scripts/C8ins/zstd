@@ -6,3 +6,4 @@ make prefix=/usr install
 rm -v /usr/lib/libzstd.a
 cd /sources
 rm -r zstd-1.5.5
+exit 0

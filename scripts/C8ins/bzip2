@@ -17,3 +17,4 @@ done
 rm -fv /usr/lib/libbz2.a
 cd /sources
 rm -r bzip2-1.0.8
+exit 0

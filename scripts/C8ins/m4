@@ -6,3 +6,4 @@ make
 make install
 cd /sources
 rm -r m4-1.4.19
+exit 0

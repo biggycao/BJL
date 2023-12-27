@@ -9,3 +9,4 @@ make
 make install
 cd /sources
 rm -r xz-5.4.4
+exit 0
