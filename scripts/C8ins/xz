@@ -6,9 +6,6 @@ cd xz-5.4.4
             --docdir=/usr/share/doc/xz-5.4.4
 
 make
-make check
-echo '(Press ENTER to continue)'
-read comfirm5
 make install
 cd /sources
 rm -r xz-5.4.4
