@@ -16,3 +16,4 @@ sh bc
 sh flex
 sh tcl
 sh expect
+sh dejagnu
