@@ -1,0 +1,13 @@
+cd /sources
+tar -xf zlib-1.2.13.tar.xz
+cd zlib-1.2.13
+
+./configure --prefix=/usr
+make
+make check
+echo '(Press ENTER to continue)'
+read comfirm4
+make install 
+rm -fv /usr/lib/libz.a
+cd /sources
+rm -r zlib-1.2.13

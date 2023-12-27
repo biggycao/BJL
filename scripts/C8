@@ -5,3 +5,4 @@ cd /BJL/C8ins/
 sh manpages
 sh ianaetc
 sh glibc
+sh zlib
