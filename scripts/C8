@@ -20,3 +20,4 @@ sh dejagnu
 sh binutils
 sh gmp
 sh mpfr
+sh mpc
