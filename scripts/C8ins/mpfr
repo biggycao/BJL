@@ -17,3 +17,4 @@ make install
 make install-html
 cd /sources
 rm -r mpfr-4.2.0
+exit 0
