@@ -118,3 +118,6 @@ include /etc/ld.so.conf.d/*.conf
 
 EOF
 mkdir -pv /etc/ld.so.conf.d
+
+cd /sources
+rm -r glibc-2.38
