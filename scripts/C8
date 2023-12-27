@@ -1,5 +1,7 @@
 #!/bin/bash
-cd /sources
-cd C8ins/
+echo THIS MIGHT TAKE A FEW DECADES
+echo zhe ke neng xu yao ji ge shi ji
+cd /BJL/C8ins/
 sh manpages
 sh ianaetc
+sh glibc
