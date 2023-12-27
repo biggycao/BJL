@@ -25,3 +25,4 @@ sh libcap
 sh libxcrypt
 sh shadow
 sh gcc
+sh pkgconf
