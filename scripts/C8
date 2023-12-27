@@ -24,3 +24,4 @@ sh acl
 sh libcap
 sh libxcrypt
 sh shadow
+sh gcc
