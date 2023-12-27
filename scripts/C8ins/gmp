@@ -1,0 +1,21 @@
+cd /sources
+tar -xf gmp-6.3.0.tar.xz
+cd gmp-6.3.0
+
+./configure --prefix=/usr    \
+            --enable-cxx     \
+            --disable-static \
+            --docdir=/usr/share/doc/gmp-6.3.0
+
+make
+make html
+make check 2>&1 | tee gmp-check-log
+awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log
+echo "make sure that at least 199 test pass."
+echo '(Press ENTER to continue)'
+read comfirm10
+make install
+make install-html
+cd /sources
+rm -r gmp-6.3.0
+exit 0
