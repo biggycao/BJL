@@ -1,0 +1,14 @@
+cd /sources
+tar -xf xz-5.4.4.tar.xz
+cd xz-5.4.4
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/xz-5.4.4
+
+make
+make check
+echo '(Press ENTER to continue)'
+read comfirm5
+make install
+cd /sources
+rm -r xz-5.4.4
