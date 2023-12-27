@@ -17,3 +17,4 @@ sh flex
 sh tcl
 sh expect
 sh dejagnu
+sh binutils
