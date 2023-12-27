@@ -19,3 +19,4 @@ sh expect
 sh dejagnu
 sh binutils
 sh gmp
+sh mpfr
