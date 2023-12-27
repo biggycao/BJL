@@ -21,3 +21,4 @@ sh mpfr
 sh mpc
 sh attr
 sh acl
+sh libcap
