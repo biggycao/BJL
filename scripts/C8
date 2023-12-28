@@ -26,3 +26,4 @@ sh libxcrypt
 sh shadow
 sh gcc
 sh pkgconf
+sh ncurses
