@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd /sources
+tar -xf iana-etc-20230810.tar.gz
+cd iana-etc-20230810n
+cp services protocols /etc
+exit 0

@@ -1,0 +1,30 @@
+cd /sources
+rm -r binutils-2.41
+tar -xf binutils-2.41.tar.xz
+cd binutils-2.41
+mkdir -v build
+cd build
+
+../configure --prefix=/usr       \
+             --sysconfdir=/etc   \
+             --enable-gold       \
+             --enable-ld=default \
+             --enable-plugins    \
+             --enable-shared     \
+             --disable-werror    \
+             --enable-64-bit-bfd \
+             --with-system-zlib
+
+make tooldir=/usr
+make -k check
+grep '^FAIL:' $(find -name '*.log')
+echo Twelve tests fail in the gold test suite when the 
+echo --enable-default-pie and --enable-default-ssp options are passed to GCC.
+echo Three tests in the gprofng suite are also known to fail.
+echo '(Press ENTER to continue)'
+read comfirm9
+make tooldir=/usr install
+rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
+cd /sources
+rm -r binutils-2.41
+exit 0
