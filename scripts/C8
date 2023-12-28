@@ -28,3 +28,4 @@ sh gcc
 sh pkgconf
 sh ncurses
 sh sed
+sh psmisc
