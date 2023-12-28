@@ -11,3 +11,4 @@ read comfirm24
 make install
 cd /sources
 rm -r grep-3.11
+exit 0
