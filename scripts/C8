@@ -27,3 +27,4 @@ sh shadow
 sh gcc
 sh pkgconf
 sh ncurses
+sh sed
