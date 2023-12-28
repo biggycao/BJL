@@ -30,3 +30,4 @@ sh ncurses
 sh sed
 sh psmisc
 sh gettext
+sh grep

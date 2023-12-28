@@ -8,9 +8,6 @@ cd gettext-0.22
             --docdir=/usr/share/doc/gettext-0.22
 
 make
-make check
-echo '(Press ENTER to continue)'
-read comfirm22
 make install
 chmod -v 0755 /usr/lib/preloadable_libintl.so
 cd /sources

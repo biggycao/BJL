@@ -1,0 +1,13 @@
+cd /sources
+rm -r grep-3.11
+tar -xf grep-3.11.tar.xz
+cd grep-3.11
+sed -i "s/echo/#echo/" src/egrep.sh
+./configure --prefix=/usr
+make
+make check
+echo '(Press ENTER to continue)'
+read comfirm24
+make install
+cd /sources
+rm -r grep-3.11
