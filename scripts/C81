@@ -9,3 +9,4 @@ sh less
 sh perl
 sh xml
 sh intl
+sh autoconf
