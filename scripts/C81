@@ -6,3 +6,4 @@ sh gperf
 sh expat
 sh inet
 sh less
+sh perl
