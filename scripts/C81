@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /BJL/C8ins/
+sh libtool
