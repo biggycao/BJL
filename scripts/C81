@@ -10,3 +10,4 @@ sh perl
 sh xml
 sh intl
 sh autoconf
+sh automake
