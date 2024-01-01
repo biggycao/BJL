@@ -1,0 +1,8 @@
+cd /sources
+tar -xf gperf-3.1.tar.gz
+./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
+make
+make install
+cd /sources
+rm -r gperf-3.1
+exit 0
