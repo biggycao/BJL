@@ -31,3 +31,4 @@ sh sed
 sh psmisc
 sh gettext
 sh grep
+sh bash
