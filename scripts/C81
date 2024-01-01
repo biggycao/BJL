@@ -4,3 +4,4 @@ sh libtool
 sh gdbm
 sh gperf
 sh expat
+sh inet
