@@ -3,3 +3,4 @@ cd /BJL/C8ins/
 sh libtool
 sh gdbm
 sh gperf
+sh expat
