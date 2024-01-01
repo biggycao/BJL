@@ -1,0 +1,9 @@
+cd /sources
+tar -xf less-643.tar.gz
+cd less-643
+./configure --prefix=/usr --sysconfdir=/etc
+make
+make install
+cd /sources
+rm -r less-643
+exit 0

@@ -5,3 +5,4 @@ sh gdbm
 sh gperf
 sh expat
 sh inet
+sh less
