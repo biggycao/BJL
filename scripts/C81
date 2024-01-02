@@ -11,3 +11,4 @@ sh xml
 sh intl
 sh autoconf
 sh automake
+sh openssl
