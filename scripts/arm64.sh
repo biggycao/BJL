@@ -8,12 +8,14 @@ tar -xf binutils-2.41.tar.xz
 cd binutils-2.41
 mkdir -v build
 cd build
+
 ../configure --prefix=/mnt/lfs/tools \
              --with-sysroot=/mnt/lfs \
              --target=$LFS_TGT   \
              --disable-nls       \
              --enable-gprofng=no \
              --disable-werror
+
 make
 make install
 cd /mnt/lfs/sources
@@ -27,10 +29,13 @@ tar -xf ../gmp-6.3.0.tar.xz
 mv -v gmp-6.3.0 gmp
 tar -xf ../mpc-1.3.1.tar.gz
 mv -v mpc-1.3.1 mpc
+
 sed -e '/lp64=/s/lib64/lib/' \
     -i.orig gcc/config/aarch64/t-aarch64-linux
+
 mkdir -v build
 cd       build
+
 ../configure                  \
     --target=$LFS_TGT         \
     --prefix=/mnt/lfs/tools   \
@@ -51,6 +56,7 @@ cd       build
     --disable-libvtv          \
     --disable-libstdcxx       \
     --enable-languages=c,c++
+
 make
 make install
 cd ..
@@ -70,6 +76,7 @@ cd glibc-2.38
 patch -Np1 -i ../glibc-2.38-fhs-1.patch
 mkdir -v build
 cd       build
+
 echo "rootsbindir=/usr/sbin" > configparms
 ../configure                             \
       --prefix=/usr                      \
@@ -79,6 +86,7 @@ echo "rootsbindir=/usr/sbin" > configparms
       --with-headers=/mnt/lfs/usr/include    \
       --disable-nscd                     \
       libc_cv_slibdir=/usr/lib
+
 make
 make DESTDIR=/mnt/lfs install
 sed '/RTLDLIST=/s@/usr@@g' -i $LFS/usr/bin/ldd
@@ -92,6 +100,7 @@ tar -xf gcc-13.2.0.tar.xz
 cd gcc-13.2.0
 mkdir -v build
 cd       build
+
 ../libstdc++-v3/configure           \
     --host=$LFS_TGT                 \
     --build=$(../config.guess)      \
@@ -100,6 +109,7 @@ cd       build
     --disable-nls                   \
     --disable-libstdcxx-pch         \
     --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/13.2.0
+
 make
 make DESTDIR=/mnt/lfs install
 rm -v /mnt/lfs/usr/lib/lib{stdc++{,exp,fs},supc++}.la

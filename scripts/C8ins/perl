@@ -2,6 +2,7 @@ cd /sources
 tar -xf perl-5.38.0.tar.xz
 export BUILD_ZLIB=False
 export BUILD_BZIP2=0
+
 sh Configure -des                                         \
              -Dprefix=/usr                                \
              -Dvendorprefix=/usr                          \
@@ -16,6 +17,7 @@ sh Configure -des                                         \
              -Dpager="/usr/bin/less -isR"                 \
              -Duseshrplib                                 \
              -Dusethreads
+             
 make
 make install
 unset BUILD_ZLIB BUILD_BZIP2

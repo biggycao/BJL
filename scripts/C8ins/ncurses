@@ -27,12 +27,14 @@ echo "INPUT(-lncursesw)" > /usr/lib/libcursesw.so
 ln -sfv libncurses.so      /usr/lib/libcurses.so
 cp -v -R doc -T /usr/share/doc/ncurses-6.4
 make distclean
+
 ./configure --prefix=/usr    \
             --with-shared    \
             --without-normal \
             --without-debug  \
             --without-cxx-binding \
             --with-abi-version=5
+            
 make sources libs
 cp -av lib/lib*.so.5* /usr/lib
 cd /sources

@@ -1,11 +1,13 @@
 cd /sources
 tar -xf openssl-3.1.2.tar.gz
 cd openssl-3.1.2
+
 ./config --prefix=/usr         \
          --openssldir=/etc/ssl \
          --libdir=lib          \
          shared                \
          zlib-dynamic
+         
 make
 sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
 make MANSUFFIX=ssl install

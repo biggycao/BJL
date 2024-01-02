@@ -1,12 +1,14 @@
 cd /sources
 tar -xf kmod-30.tar.xz
 cd kmod-30
+
 ./configure --prefix=/usr          \
             --sysconfdir=/etc      \
             --with-openssl         \
             --with-xz              \
             --with-zstd            \
             --with-zlib
+            
 make
 make install
 
