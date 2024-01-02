@@ -1,0 +1,8 @@
+cd /sources
+tar -xf wheel-0.41.1.tar.gz
+cd wheel-0.41.1
+pip3 wheel -w dist --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links=dist wheel
+cd /sources
+rm -r wheel-0.41.1
+exit 0
