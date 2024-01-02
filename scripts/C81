@@ -16,3 +16,4 @@ sh kmod
 sh libelf
 sh libffi
 sh python
+sh filtcore
