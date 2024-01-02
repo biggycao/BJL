@@ -1,0 +1,14 @@
+#!/bin/bash
+cd /BJL/C8ins/
+sh libtool
+sh gdbm
+sh gperf
+sh expat
+sh inet
+sh less
+sh perl
+sh xml
+sh intl
+sh autoconf
+sh automake
+sh openssl

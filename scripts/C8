@@ -26,3 +26,9 @@ sh libxcrypt
 sh shadow
 sh gcc
 sh pkgconf
+sh ncurses
+sh sed
+sh psmisc
+sh gettext
+sh grep
+sh bash

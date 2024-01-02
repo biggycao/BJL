@@ -1,0 +1,9 @@
+cd /sources
+tar -xf XML-Parser-2.46.tar.gz
+cd XML-Parser-2.46
+perl Makefile.PL
+make
+make install
+cd /sources
+rm -r XML-Parser-2.46
+exit 0

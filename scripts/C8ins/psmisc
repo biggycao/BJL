@@ -1,0 +1,9 @@
+cd /sources
+tar -xf psmisc-23.6.tar.xz
+cd psmisc-23.6
+./configure --prefix=/usr
+make
+make install
+cd /sources
+rm -r psmisc-23.6
+exit 0
