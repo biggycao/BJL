@@ -13,3 +13,4 @@ sh autoconf
 sh automake
 sh openssl
 sh kmod
+sh libelf
