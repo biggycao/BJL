@@ -44,6 +44,10 @@ else
     echo "bios"
 fi
 
+wget https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.19.0.tar.gz
+wget https://github.com/p11-glue/p11-kit/releases/download/0.25.0/p11-kit-0.25.0.tar.xz
+wget https://github.com/lfs-book/make-ca/releases/download/v1.12/make-ca-1.12.tar.xz
+wget https://ftp.gnu.org/gnu/wget/wget-1.21.4.tar.gz
 tar -xf lfs-packages-12.0.tar
 cp 12.0/* .
 sh $LFS/BJLtempins/arch
