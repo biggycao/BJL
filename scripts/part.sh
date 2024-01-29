@@ -18,8 +18,8 @@ mkfs.ext4 $root
 parted $disk print
 mount $root /mnt/lfs
 swapon $swap
-mkdir $HOME/BJLtempins
-cp ./* $HOME/BJLtempins
+mkdir $LFS/BJLtempins
+cp -r ./* $LFS/BJLtempins
 mkdir -v $LFS/sources
 chmod -v a+wt $LFS/sources
 wget https://mirrors.ustc.edu.cn/lfs/lfs-packages/lfs-packages-12.0.tar --continue --directory-prefix=$LFS/sources
